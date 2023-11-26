@@ -21,6 +21,7 @@ FROM rustlang/rust:nightly-bullseye as runner
 # Copy the server binary to the /app directory
 COPY --from=builder /app/target/release/udp-server /app/
 
+COPY --from=builder /app/data/environment.gltf /app/data/environment.gltf
 COPY --from=builder /app/Cargo.toml /app/
 
 WORKDIR /app
