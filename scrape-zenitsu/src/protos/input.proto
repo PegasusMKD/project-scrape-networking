@@ -1,0 +1,37 @@
+syntax = "proto3";
+package input_messages;
+
+message PlayerJoined {
+  string id = 1;  
+  string username = 2;
+}
+
+message PlayerLeft {
+  string id = 1;
+}
+
+message Direction {
+  float direction_x = 1;
+  float direction_y = 2;
+  float direction_z = 3;
+}
+
+message Shoot {
+  Direction direction = 1;
+}
+
+message Move {
+  string id = 1;
+  float distance_x = 2;
+  float distance_y = 3;
+  float distance_z = 4;
+}
+
+message GameEvent {
+  oneof event {
+    PlayerJoined joined = 1;
+    Move move = 2;
+    PlayerLeft left = 3;
+    Shoot shoot = 4;
+  }
+}
