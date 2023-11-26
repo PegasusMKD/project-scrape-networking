@@ -1,7 +1,7 @@
 use crate::rapier::IntoRapier;
 use rapier3d::prelude::{
-    ActiveEvents, BroadPhase, CCDSolver, ColliderHandle, ImpulseJointSet, IntegrationParameters,
-    IslandManager, MultibodyJoint, MultibodyJointSet, NarrowPhase, PhysicsPipeline,
+    BroadPhase, CCDSolver, ImpulseJointSet, IntegrationParameters,
+    IslandManager, MultibodyJointSet, NarrowPhase, PhysicsPipeline,
 };
 pub use rapier3d::{
     control::KinematicCharacterController,
@@ -35,8 +35,7 @@ impl GameCollider {
     pub fn calculate_movement(
         &mut self,
         player_handle: RigidBodyHandle,
-        desired: Vec<f32>,
-        delta: f32,
+        desired: Vec<f32>
     ) -> Matrix<f32, Const<3>, Const<1>, ArrayStorage<f32, 3, 1>> {
         self.query_pipeline.update(&self.bodies, &self.colliders);
         let desired_translation = desired.into_rapier();
@@ -181,7 +180,7 @@ mod tests {
         let mut collider = GameCollider::new("./data/environment.gltf".to_string());
         let handle = collider.load_player(vec![11.0, 2.0, 1.0]);
         
-        let data = collider.calculate_movement(handle, vec![1.0, 2.0, 1.0], 10.0);
+        let data = collider.calculate_movement(handle, vec![1.0, 2.0, 1.0]);
         let player = collider.get_mut_player(handle);
         player.set_next_kinematic_translation(player.translation() + data);
         collider.run_step(); 

@@ -81,17 +81,12 @@ impl GameInfo {
             .position(|player| player.server_info.addr == addr);
         if let Some(pos) = player_exists {
             let player = self.players.get_mut(pos).unwrap();
-            let desired = vec![
-                data.distance_x,
-                data.distance_y,
-                data.distance_z,
-            ];
-            let calculated_position =
-                self.collider
-                    .calculate_movement(player.handle, desired.clone(), delta);
+            let desired = vec![data.distance_x, data.distance_y, data.distance_z];
+            let calculated_position = self.collider.calculate_movement(player.handle, desired);
 
             let player_body = self.collider.get_mut_player(player.handle);
-            player_body.set_next_kinematic_translation(player_body.translation() + calculated_position);
+            player_body
+                .set_next_kinematic_translation(player_body.translation() + calculated_position);
             let next_position = player_body.next_position().translation;
             self.collider.run_step();
             return Some(UpdateEvent::ChangedPlayerPosition(
