@@ -2,9 +2,6 @@ use std::net::SocketAddr;
 
 use crate::networking::*;
 
-use crate::geometry::*;
-
-use rand::Rng;
 use scrape_collision::collider::RigidBodyHandle;
 
 #[derive(Clone)]

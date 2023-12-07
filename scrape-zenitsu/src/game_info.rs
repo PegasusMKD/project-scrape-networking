@@ -46,7 +46,7 @@ impl GameInfo {
             };
             let handle = self
                 .collider
-                .load_player(vec![position.x, position.y, position.z]);
+                .load_entity(vec![position.x, position.y, position.z]);
             let player = Player::new(data.id.clone(), data.username.clone(), addr, handle);
             self.players.push(player);
             return Some(UpdateEvent::AddedPlayer(output_messages::AddedPlayer {
@@ -74,7 +74,7 @@ impl GameInfo {
         None
     }
 
-    pub fn move_player(&mut self, data: Move, delta: f32, addr: SocketAddr) -> Option<UpdateEvent> {
+    pub fn move_player(&mut self, data: Move, addr: SocketAddr) -> Option<UpdateEvent> {
         let player_exists = self
             .players
             .iter()
@@ -84,11 +84,10 @@ impl GameInfo {
             let desired = vec![data.distance_x, data.distance_y, data.distance_z];
             let calculated_position = self.collider.calculate_movement(player.handle, desired);
 
-            let player_body = self.collider.get_mut_player(player.handle);
+            let player_body = self.collider.get_mut_entity(player.handle);
             player_body
                 .set_next_kinematic_translation(player_body.translation() + calculated_position);
             let next_position = player_body.next_position().translation;
-            self.collider.run_step();
             return Some(UpdateEvent::ChangedPlayerPosition(
                 output_messages::ChangedPlayerPosition {
                     id: player.id.clone(),
@@ -125,14 +124,14 @@ impl GameInfo {
             return None;
         }
 
-        let player_body = self.collider.get_player(player.unwrap().handle);
-        let player_position = player_body.translation().clone();
+        let player_body = self.collider.get_entity(player.unwrap().handle);
+        let player_position = player_body.translation();
         let position = Position {
             x: player_position.x,
             y: player_position.y,
             z: player_position.z,
         };
-        let basic_bullet = BasicBullet::new(position, payload.direction.unwrap());
+        let basic_bullet = BasicBullet::new(&mut self.collider, position, payload.direction.unwrap());
         let response = Some(UpdateEvent::CreateBullet(
             output_messages::CreateBullet::new(&basic_bullet.bullet_info),
         ));
@@ -142,10 +141,10 @@ impl GameInfo {
         response
     }
 
-    pub fn game_tick(&mut self, delta: u128) -> Option<UpdateEvent> {
+    pub fn update_bullets(&mut self, delta: u128) -> Option<UpdateEvent> {
         let mut bullet_changes: Vec<output_messages::UpdateBulletPosition> = Vec::new();
         for bullet in self.bullets.iter_mut() {
-            bullet_changes.push(bullet.update_position(delta));
+            bullet_changes.push(bullet.update_position(&mut self.collider, delta));
         }
 
         if !bullet_changes.is_empty() {
@@ -157,6 +156,13 @@ impl GameInfo {
                 update_bullet_position: bullet_changes,
             },
         ))
+    }
+
+    pub fn game_tick(&mut self, delta: u128) -> Vec<Option<UpdateEvent>> {
+        let mut events = Vec::new();
+        events.push(self.update_bullets(delta));
+        self.collider.run_step();
+        events
     }
 }
 

@@ -66,20 +66,16 @@ impl GameServer {
             let start = utility::current_time();
             let delta = start - last_loop;
 
-            let _ = self.process_all_events(delta as f32).await;
-
-            self.game.game_tick(delta);
+            let mut events = self.process_all_user_events().await?;
+            events.extend(self.game.game_tick(delta));
+            let _ = self.update_clients(&mut events).await;
 
             last_loop = start;
         }
     }
 
-    async fn process_all_events(&mut self, delta: f32) -> io::Result<()> {
-        let mut queue = self.flush_queue().await;
-
-        while let Some(message) = queue.pop_first() {
-            // println!("Processed the message: {:?}", message);
-            let update = self.process_event(message.data, delta, message.addr);
+    async fn update_clients(&mut self, events: &mut Vec<Option<UpdateEvent>>) -> io::Result<()> {
+        while let Some(update) = events.pop() {
             self.process_update(update).await?;
             self.write_buf.clear();
         }
@@ -87,16 +83,23 @@ impl GameServer {
         Ok(())
     }
 
-    fn process_event(
-        &mut self,
-        event: GameEvent,
-        delta: f32,
-        addr: SocketAddr,
-    ) -> Option<UpdateEvent> {
+    async fn process_all_user_events(&mut self) -> io::Result<Vec<Option<UpdateEvent>>> {
+        let mut queue = self.flush_queue().await;
+        let mut updates = Vec::new();
+
+        while let Some(message) = queue.pop_first() {
+            // println!("Processed the message: {:?}", message);
+            updates.push(self.process_event(message.data, message.addr));
+        }
+
+        Ok(updates)
+    }
+
+    fn process_event(&mut self, event: GameEvent, addr: SocketAddr) -> Option<UpdateEvent> {
         let ev = event.event.unwrap();
         match ev {
             Event::Joined(payload) => self.game.add_player(payload, addr),
-            Event::Move(payload) => self.game.move_player(payload, delta, addr),
+            Event::Move(payload) => self.game.move_player(payload, addr),
             Event::Left(payload) => self.game.remove_player(payload, addr),
             Event::Shoot(payload) => self.game.shoot_bullet(payload, addr),
         }

@@ -26,7 +26,7 @@ impl InboundServer {
 
     pub async fn peek_latest_order(&self) -> i32 {
         if let Some(item) = self.message_queue.lock().await.last() {
-            return item.order.clone();
+            return item.order;
         }
 
         return 0;
@@ -53,7 +53,7 @@ impl InboundServer {
 
         let last_order = self.peek_latest_order().await;
         self.message_queue.lock().await.insert(QueuedMessage {
-            data: event.clone(),
+            data: event,
             addr,
             order: last_order + 1,
         });
