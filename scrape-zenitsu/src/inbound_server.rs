@@ -12,15 +12,18 @@ use crate::input_messages::*;
 use crate::message_queue::*;
 
 pub struct InboundServer {
-    pub socket: Arc<Mutex<UdpSocket>>,         // Shared
+    pub socket: Arc<UdpSocket>,         // Shared
     pub message_queue: ConcurrentMessageQueue, // Shared
+
+    in_usage: bool,
 }
 
 impl InboundServer {
     pub fn new(socket: UdpSocket) -> Self {
         InboundServer {
-            socket: Arc::new(Mutex::new(socket)),
+            socket: Arc::new(socket),
             message_queue: Arc::new(Mutex::new(BTreeSet::new())),
+            in_usage: false,
         }
     }
 
@@ -34,7 +37,7 @@ impl InboundServer {
 
     pub async fn wait_incoming_messages(&mut self) -> io::Result<()> {
         let mut buf = vec![0; 128];
-        let result = self.socket.lock().await.try_recv_from(&mut buf);
+        let result = self.socket.recv_from(&mut buf).await;
 
         match result {
             Err(ref e) => {

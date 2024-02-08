@@ -14,8 +14,9 @@ RUN mkdir -p /app
 WORKDIR /app
 COPY . .
 
+ENV RUSTFLAGS="--cfg tokio_unstable"
 # Build the app
-RUN cargo build --release -vv
+RUN cargo build --release
 
 FROM rustlang/rust:nightly-bullseye as runner
 # Copy the server binary to the /app directory

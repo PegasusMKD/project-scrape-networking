@@ -23,7 +23,7 @@ use crate::output_messages::update_game_event::UpdateEvent;
 use crate::output_messages::UpdateGameEvent;
 
 pub struct GameServer {
-    socket: Arc<Mutex<UdpSocket>>,         // Shared
+    socket: Arc<UdpSocket>,         // Shared
     message_queue: ConcurrentMessageQueue, // Shared
 
     game: GameInfo,             // Outgoing
@@ -40,7 +40,7 @@ impl GameServer {
         });
     }
 
-    pub fn new(queue: ConcurrentMessageQueue, socket: Arc<Mutex<UdpSocket>>) -> Self {
+    pub fn new(queue: ConcurrentMessageQueue, socket: Arc<UdpSocket>) -> Self {
         Self {
             message_queue: queue,
             socket,
@@ -120,8 +120,9 @@ impl GameServer {
         ev.encode(&mut self.write_buf)?;
 
         for addr in addrs {
-            let result = self.socket.lock().await.try_send_to(&self.write_buf, addr);
+            let result = self.socket.try_send_to(&self.write_buf, addr);
             if result.is_err() {
+                eprintln!("Encountered error with player {addr}");
                 self.game
                     .remove_player(input_messages::PlayerLeft { id: String::new() }, addr);
             }
