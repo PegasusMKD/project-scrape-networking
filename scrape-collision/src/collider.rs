@@ -1,7 +1,7 @@
 use crate::rapier::IntoRapier;
 use rapier3d::prelude::{
-    BroadPhase, CCDSolver, ImpulseJointSet, IntegrationParameters,
-    IslandManager, MultibodyJointSet, NarrowPhase, PhysicsPipeline,
+    BroadPhase, CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager,
+    MultibodyJointSet, NarrowPhase, PhysicsPipeline,
 };
 pub use rapier3d::{
     control::KinematicCharacterController,
@@ -35,7 +35,7 @@ impl GameCollider {
     pub fn calculate_movement(
         &mut self,
         entity_handle: RigidBodyHandle,
-        desired: Vec<f32>
+        desired: Vec<f32>,
     ) -> Matrix<f32, Const<3>, Const<1>, ArrayStorage<f32, 3, 1>> {
         self.query_pipeline.update(&self.bodies, &self.colliders);
         let desired_translation = desired.into_rapier();
@@ -85,7 +85,14 @@ impl GameCollider {
     }
 
     pub fn unload_entity(&mut self, handle: RigidBodyHandle) {
-        self.bodies.remove(handle, &mut self.island_manager, &mut self.colliders, &mut self.impulse_joint_set, &mut self.multibody_joint_set, true);
+        self.bodies.remove(
+            handle,
+            &mut self.island_manager,
+            &mut self.colliders,
+            &mut self.impulse_joint_set,
+            &mut self.multibody_joint_set,
+            true,
+        );
     }
 
     // "./data/environment.gltf"
@@ -101,14 +108,16 @@ impl GameCollider {
 
     pub fn add_tri_mesh(&mut self, in_vertices: Vec<[f32; 3]>, indices: Vec<[u32; 3]>) {
         let center: Vec<f32> = vec![0.0, 0.0, 0.0];
-        
+
         let vertices = in_vertices
             .iter()
             .map(|vec| Point3::new(vec[0], vec[1], vec[2]))
             .collect();
         let collider_body = RigidBodyBuilder::fixed().build();
         let body_handle = self.bodies.insert(collider_body);
-        let collider = ColliderBuilder::trimesh(vertices, indices).translation(center.into_rapier()).build();
+        let collider = ColliderBuilder::trimesh(vertices, indices)
+            .translation(center.into_rapier())
+            .build();
         self.colliders
             .insert_with_parent(collider, body_handle, &mut self.bodies);
     }
@@ -137,7 +146,6 @@ impl GameCollider {
             &hooks,
             &events,
         );
-
     }
 }
 
@@ -179,11 +187,11 @@ mod tests {
     pub fn simple_out_of_bounds_test() {
         let mut collider = GameCollider::new("./data/environment.gltf".to_string());
         let handle = collider.load_entity(vec![11.0, 2.0, 1.0]);
-        
+
         let data = collider.calculate_movement(handle, vec![1.0, 2.0, 1.0]);
         let entity = collider.get_mut_entity(handle);
         entity.set_next_kinematic_translation(entity.translation() + data);
-        collider.run_step(); 
+        collider.run_step();
 
         let entity = collider.get_entity(handle);
         println!("Position: {:?}", entity.translation());

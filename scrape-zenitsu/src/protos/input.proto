@@ -16,7 +16,9 @@ message Direction {
   float direction_z = 3;
 }
 
-message Shoot {
+message Shoot {}
+
+message UpdateCamera {
   Direction direction = 1;
 }
 
@@ -33,5 +35,6 @@ message GameEvent {
     Move move = 2;
     PlayerLeft left = 3;
     Shoot shoot = 4;
+    UpdateCamera updateCamera = 5;
   }
 }

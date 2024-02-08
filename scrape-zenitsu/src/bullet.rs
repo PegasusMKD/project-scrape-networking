@@ -7,7 +7,7 @@ pub struct BulletInfo {
     pub id: uuid::Uuid,
     pub position: Position,
     velocity: Velocity,
-    handle: RigidBodyHandle
+    handle: RigidBodyHandle,
 }
 
 impl BulletInfo {
@@ -22,7 +22,7 @@ impl BulletInfo {
         desired.push((delta as f32 / 1000.0) * self.velocity.velocity_z);
 
         let calculated_position = collider.calculate_movement(self.handle, desired);
-        let bullet_body = collider.get_mut_player(self.handle);
+        let bullet_body = collider.get_mut_entity(self.handle);
         bullet_body.set_next_kinematic_translation(bullet_body.translation() + calculated_position);
         let next_position = bullet_body.next_position().translation;
 
@@ -45,14 +45,14 @@ impl BasicBullet {
     pub fn new(collider: &mut GameCollider, position: Position, direction: Direction) -> Self {
         let default_speed = 2.0;
 
-        let handle = collider.load_player(vec![position.x, position.y, position.z]);
+        let handle = collider.load_entity(vec![position.x, position.y, position.z]);
 
         Self {
             bullet_info: BulletInfo {
                 id: uuid::Uuid::new_v4(),
                 position,
                 velocity: Velocity::new(direction, default_speed),
-                handle 
+                handle,
             },
             speed: default_speed,
             damage: 20,

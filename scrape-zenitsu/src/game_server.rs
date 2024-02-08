@@ -102,6 +102,7 @@ impl GameServer {
             Event::Move(payload) => self.game.move_player(payload, addr),
             Event::Left(payload) => self.game.remove_player(payload, addr),
             Event::Shoot(payload) => self.game.shoot_bullet(payload, addr),
+            Event::UpdateCamera(_) => None,
         }
     }
 

@@ -940,7 +940,6 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 [[package]]
 name = "scrape-collision"
 version = "0.1.0"
-source = "git+https://github.com/PegasusMKD/project-scrape-networking.git#1396ffb678f3018c16b8f280f2e1e7cf7cd81bbf"
 dependencies = [
  "rapier3d",
  "scrape-gltf-loader",
@@ -949,7 +948,6 @@ dependencies = [
 [[package]]
 name = "scrape-gltf-loader"
 version = "1.0.0"
-source = "git+https://github.com/PegasusMKD/project-scrape-networking.git#1396ffb678f3018c16b8f280f2e1e7cf7cd81bbf"
 dependencies = [
  "bevy_math",
  "gltf",

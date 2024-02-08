@@ -65,7 +65,7 @@ impl GameInfo {
             .position(|player| player.server_info.addr == addr);
         if let Some(pos) = player_exists {
             let player = self.players.swap_remove(pos);
-            self.collider.unload_player(player.handle);
+            self.collider.unload_entity(player.handle);
             return Some(UpdateEvent::RemovedPlayer(output_messages::RemovedPlayer {
                 id: player.id,
             }));
@@ -126,19 +126,22 @@ impl GameInfo {
 
         let player_body = self.collider.get_entity(player.unwrap().handle);
         let player_position = player_body.translation();
+        // let player_rotation = player_body.rotation().to_direction();
         let position = Position {
             x: player_position.x,
             y: player_position.y,
             z: player_position.z,
         };
-        let basic_bullet = BasicBullet::new(&mut self.collider, position, payload.direction.unwrap());
-        let response = Some(UpdateEvent::CreateBullet(
-            output_messages::CreateBullet::new(&basic_bullet.bullet_info),
-        ));
-        self.bullets.push(Bullet::Basic {
-            bullet: basic_bullet,
-        });
-        response
+        // TODO: Fix
+        // let basic_bullet = BasicBullet::new(&mut self.collider, position);
+        // let response = Some(UpdateEvent::CreateBullet(
+        //     output_messages::CreateBullet::new(&basic_bullet.bullet_info),
+        // ));
+        // self.bullets.push(Bullet::Basic {
+        //    bullet: basic_bullet,
+        // });
+        // response
+        None
     }
 
     pub fn update_bullets(&mut self, delta: u128) -> Option<UpdateEvent> {
