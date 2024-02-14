@@ -20,6 +20,7 @@ message Shoot {}
 
 message UpdateCamera {
   Direction direction = 1;
+  float w = 2;
 }
 
 message Move {

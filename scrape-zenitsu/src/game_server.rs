@@ -10,7 +10,6 @@ use std::time::Duration;
 use prost::Message;
 use std::sync::Arc;
 use tokio::net::UdpSocket;
-use tokio::sync::Mutex;
 
 use crate::message_queue::*;
 use crate::{game_info::*, input_messages};
@@ -23,7 +22,7 @@ use crate::output_messages::update_game_event::UpdateEvent;
 use crate::output_messages::UpdateGameEvent;
 
 pub struct GameServer {
-    socket: Arc<UdpSocket>,         // Shared
+    socket: Arc<UdpSocket>,                // Shared
     message_queue: ConcurrentMessageQueue, // Shared
 
     game: GameInfo,             // Outgoing
@@ -102,7 +101,7 @@ impl GameServer {
             Event::Move(payload) => self.game.move_player(payload, addr),
             Event::Left(payload) => self.game.remove_player(payload, addr),
             Event::Shoot(payload) => self.game.shoot_bullet(payload, addr),
-            Event::UpdateCamera(_) => None,
+            Event::UpdateCamera(payload) => self.game.update_camera_rotation(payload, addr),
         }
     }
 

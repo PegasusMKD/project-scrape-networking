@@ -1,19 +1,22 @@
 use rapier3d::na::Quaternion;
 
 pub struct RotationalDirection {
-    x: f32,
-    y: f32,
-    z: f32,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
 pub trait IntoDirection {
     fn into_direction(&self) -> RotationalDirection;
 }
 
-
 impl IntoDirection for Quaternion<f32> {
-
     fn into_direction(&self) -> RotationalDirection {
-        RotationalDirection { x: self.coords.x, y: self.coords.y, z: self.coords.z } // todo: re-check
+        let coords = self.coords.xyz();
+        RotationalDirection {
+            x: coords[0],
+            y: coords[1],
+            z: coords[2],
+        } // todo: re-check
     }
 }

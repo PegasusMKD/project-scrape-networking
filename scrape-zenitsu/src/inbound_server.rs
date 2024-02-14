@@ -12,10 +12,8 @@ use crate::input_messages::*;
 use crate::message_queue::*;
 
 pub struct InboundServer {
-    pub socket: Arc<UdpSocket>,         // Shared
+    pub socket: Arc<UdpSocket>,                // Shared
     pub message_queue: ConcurrentMessageQueue, // Shared
-
-    in_usage: bool,
 }
 
 impl InboundServer {
@@ -23,7 +21,6 @@ impl InboundServer {
         InboundServer {
             socket: Arc::new(socket),
             message_queue: Arc::new(Mutex::new(BTreeSet::new())),
-            in_usage: false,
         }
     }
 

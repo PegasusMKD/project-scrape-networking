@@ -1,14 +1,18 @@
-use crate::rapier::IntoRapier;
-use rapier3d::prelude::{
-    BroadPhase, CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager,
-    MultibodyJointSet, NarrowPhase, PhysicsPipeline,
-};
+use crate::{helpers::RotationalDirection, rapier::IntoRapier};
 pub use rapier3d::{
     control::KinematicCharacterController,
     na::{ArrayStorage, Const, Matrix, Point3},
     prelude::{
         Collider, ColliderBuilder, ColliderSet, QueryFilter, QueryPipeline, RigidBody,
         RigidBodyBuilder, RigidBodyHandle, RigidBodySet,
+    },
+};
+use rapier3d::{
+    math::Rotation,
+    na::{Quaternion, Unit, UnitQuaternion},
+    prelude::{
+        BroadPhase, CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager,
+        MultibodyJointSet, NarrowPhase, PhysicsPipeline,
     },
 };
 use scrape_gltf_loader::loader::load_gltf_file;
@@ -56,6 +60,20 @@ impl GameCollider {
         );
 
         calculated_movement.translation
+    }
+
+    pub fn update_entity_rotation(
+        &mut self,
+        entity_handle: RigidBodyHandle,
+        i: f32,
+        j: f32,
+        k: f32,
+        w: f32,
+    ) {
+        let new_rotation = Quaternion::new(w, i, j, k);
+        let entity = self.get_mut_entity(entity_handle);
+        let quaternion = UnitQuaternion::new_normalize(new_rotation);
+        entity.set_next_kinematic_rotation(quaternion);
     }
 
     pub fn get_entity(&self, entity_handle: RigidBodyHandle) -> &RigidBody {

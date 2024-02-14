@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 use std::u128;
 
-use scrape_collision::collider::GameCollider;
+use scrape_collision::{collider::GameCollider, helpers::IntoDirection};
 
 use crate::bullet::BasicBullet;
 use crate::game_state::GameState;
@@ -101,6 +101,32 @@ impl GameInfo {
         None
     }
 
+    pub fn update_camera_rotation(
+        &mut self,
+        payload: input_messages::UpdateCamera,
+        addr: SocketAddr,
+    ) -> Option<UpdateEvent> {
+        let player = self.find_player_by_address(addr);
+        if player.is_none() {
+            return None;
+        }
+
+        let direction = payload.direction.unwrap();
+        let w = payload.w;
+
+        println!("Updated rotation: {:?}", direction);
+
+        self.collider.update_entity_rotation(
+            player.unwrap().handle,
+            direction.direction_x,
+            direction.direction_y,
+            direction.direction_z,
+            w,
+        );
+
+        None
+    }
+
     fn find_player_by_address(&self, addr: SocketAddr) -> Option<&Player> {
         let player_exists = self
             .players
@@ -116,7 +142,7 @@ impl GameInfo {
 
     pub fn shoot_bullet(
         &mut self,
-        payload: input_messages::Shoot,
+        _payload: input_messages::Shoot,
         addr: SocketAddr,
     ) -> Option<UpdateEvent> {
         let player = self.find_player_by_address(addr);
@@ -126,22 +152,33 @@ impl GameInfo {
 
         let player_body = self.collider.get_entity(player.unwrap().handle);
         let player_position = player_body.translation();
-        // let player_rotation = player_body.rotation().to_direction();
+        let player_rotation = player_body.rotation().into_inner().into_direction();
+        println!(
+            "Direction: x: {} - y: {} - z: {}",
+            player_rotation.x, player_rotation.y, player_rotation.z
+        );
         let position = Position {
             x: player_position.x,
             y: player_position.y,
             z: player_position.z,
         };
         // TODO: Fix
-        // let basic_bullet = BasicBullet::new(&mut self.collider, position);
-        // let response = Some(UpdateEvent::CreateBullet(
-        //     output_messages::CreateBullet::new(&basic_bullet.bullet_info),
-        // ));
-        // self.bullets.push(Bullet::Basic {
-        //    bullet: basic_bullet,
-        // });
-        // response
-        None
+        let basic_bullet = BasicBullet::new(
+            &mut self.collider,
+            position,
+            Direction {
+                direction_x: player_rotation.x,
+                direction_y: player_rotation.y,
+                direction_z: player_rotation.z,
+            },
+        );
+        let response = Some(UpdateEvent::CreateBullet(
+            output_messages::CreateBullet::new(&basic_bullet.bullet_info),
+        ));
+        self.bullets.push(Bullet::Basic {
+            bullet: basic_bullet,
+        });
+        response
     }
 
     pub fn update_bullets(&mut self, delta: u128) -> Option<UpdateEvent> {

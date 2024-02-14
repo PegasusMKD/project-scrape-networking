@@ -9,7 +9,6 @@ use udp_server::inbound_server;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    console_subscriber::init();
     let socket = UdpSocket::bind("0.0.0.0:8080").await?;
     let mut server = inbound_server::InboundServer::new(socket);
 
