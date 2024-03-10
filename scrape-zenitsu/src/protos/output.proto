@@ -29,6 +29,7 @@ message UpdateBulletPosition {
   float x = 2;
   float y = 3;
   float z = 4;
+  bool destroy = 5;
 }
 
 message UpdateAllBullets {

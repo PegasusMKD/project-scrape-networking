@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use crate::networking::*;
 
-use scrape_collision::collider::RigidBodyHandle;
+use scrape_collision::collider::{ColliderHandle, RigidBodyHandle};
 
 #[derive(Clone)]
 pub struct Player {
@@ -10,15 +10,17 @@ pub struct Player {
     pub username: String,
     pub server_info: PlayerServerInfo,
     pub health: i32,
-    pub handle: RigidBodyHandle,
+    pub body_handle: RigidBodyHandle,
+    pub collider_handle: ColliderHandle
 }
 
 impl Player {
-    pub fn new(id: String, username: String, addr: SocketAddr, handle: RigidBodyHandle) -> Self {
+    pub fn new(id: String, username: String, addr: SocketAddr, body_handle: RigidBodyHandle, collider_handle: ColliderHandle) -> Self {
         Player {
             id,
             username,
-            handle,
+            body_handle,
+            collider_handle,
             server_info: PlayerServerInfo { addr },
             health: 100,
         }

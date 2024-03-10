@@ -1,21 +1,29 @@
-use crate::{helpers::RotationalDirection, rapier::IntoRapier};
+use crate::rapier::IntoRapier;
 pub use rapier3d::{
+    control::CharacterCollision,
     control::KinematicCharacterController,
+    geometry::ColliderHandle,
+    parry::query::TOIStatus,
     na::{ArrayStorage, Const, Matrix, Point3},
     prelude::{
         Collider, ColliderBuilder, ColliderSet, QueryFilter, QueryPipeline, RigidBody,
         RigidBodyBuilder, RigidBodyHandle, RigidBodySet,
     },
 };
+
 use rapier3d::{
-    math::Rotation,
-    na::{Quaternion, Unit, UnitQuaternion},
-    prelude::{
+    na::{Quaternion, UnitQuaternion}, prelude::{
         BroadPhase, CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager,
         MultibodyJointSet, NarrowPhase, PhysicsPipeline,
-    },
+    }
 };
+
 use scrape_gltf_loader::loader::load_gltf_file;
+
+pub struct Movement {
+    pub next_position: Matrix<f32, Const<3>, Const<1>, ArrayStorage<f32, 3, 1>>,
+    pub collisions: Vec<CharacterCollision>,
+}
 
 pub struct GameCollider {
     bodies: RigidBodySet,
@@ -39,13 +47,20 @@ impl GameCollider {
     pub fn calculate_movement(
         &mut self,
         entity_handle: RigidBodyHandle,
+        exclude_colliders: Vec<ColliderHandle>,
         desired: Vec<f32>,
-    ) -> Matrix<f32, Const<3>, Const<1>, ArrayStorage<f32, 3, 1>> {
+    ) -> Movement {
         self.query_pipeline.update(&self.bodies, &self.colliders);
         let desired_translation = desired.into_rapier();
         let entity = self.get_entity(entity_handle);
         let starting_translation = entity.position();
         let entity_collider = ColliderBuilder::capsule_y(0.5, 0.2).build();
+
+        let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel();
+        let mut events = Vec::new();
+
+        let exclude_fn = |handle, _collider: &_| !exclude_colliders.contains(&handle);
+        let query_filters = QueryFilter::new().predicate(&exclude_fn).exclude_rigid_body(entity_handle);
 
         let calculated_movement = self.controller.move_shape(
             self.integration_parameters.dt,
@@ -55,11 +70,20 @@ impl GameCollider {
             entity_collider.shape(),
             &starting_translation,
             desired_translation,
-            QueryFilter::new().exclude_rigid_body(entity_handle),
-            |_event| {}, // if we need to fetch any events, use this fn
+            query_filters,
+            move |event| {
+                sender.send(event).unwrap();
+            }, // if we need to fetch any events, use this fn
         );
 
-        calculated_movement.translation
+        while let Ok(event) = receiver.try_recv() {
+            events.push(event);
+        }
+
+        Movement {
+            next_position: calculated_movement.translation,
+            collisions: events,
+        }
     }
 
     pub fn update_entity_rotation(
@@ -88,7 +112,7 @@ impl GameCollider {
             .expect("entity did not exist in the RigidBodySet")
     }
 
-    pub fn load_entity(&mut self, spawn: Vec<f32>) -> RigidBodyHandle {
+    pub fn load_entity(&mut self, spawn: Vec<f32>) -> (RigidBodyHandle, ColliderHandle) {
         let entity_collider = ColliderBuilder::capsule_y(0.5, 0.2).build();
         let handle = self.bodies.insert(
             RigidBodyBuilder::kinematic_position_based()
@@ -97,9 +121,11 @@ impl GameCollider {
                 // .ccd_enabled(true)
                 .build(),
         );
-        self.colliders
+        let collider = self
+            .colliders
             .insert_with_parent(entity_collider, handle, &mut self.bodies);
-        handle
+
+        (handle, collider)
     }
 
     pub fn unload_entity(&mut self, handle: RigidBodyHandle) {
@@ -148,7 +174,7 @@ impl GameCollider {
 
     pub fn run_step(&mut self) {
         let hooks = ();
-        let events = ();
+        let events = (); // TODO: Create event-handler
         self.physics_pipeline.step(
             &self.gravity.into_rapier(),
             &self.integration_parameters,
@@ -204,14 +230,14 @@ mod tests {
     #[test]
     pub fn simple_out_of_bounds_test() {
         let mut collider = GameCollider::new("./data/environment.gltf".to_string());
-        let handle = collider.load_entity(vec![11.0, 2.0, 1.0]);
+        let (body_handle, collider_handle) = collider.load_entity(vec![11.0, 2.0, 1.0]);
 
-        let data = collider.calculate_movement(handle, vec![1.0, 2.0, 1.0]);
-        let entity = collider.get_mut_entity(handle);
-        entity.set_next_kinematic_translation(entity.translation() + data);
+        let movement = collider.calculate_movement(body_handle, vec![body_handle], vec![1.0, 2.0, 1.0]);
+        let entity = collider.get_mut_entity(body_handle);
+        entity.set_next_kinematic_translation(entity.translation() + movement.next_position);
         collider.run_step();
 
-        let entity = collider.get_entity(handle);
+        let entity = collider.get_entity(body_handle);
         println!("Position: {:?}", entity.translation());
     }
 }

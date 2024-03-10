@@ -7,6 +7,7 @@ pub struct Position {
     pub z: f32,
 }
 
+#[derive(Clone)]
 pub struct Velocity {
     pub velocity_x: f32,
     pub velocity_y: f32,

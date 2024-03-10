@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.12.0"
-bevy_rapier3d = { version = "0.23.0", features = [  ] }
-bevy_editor_pls = "0.6.0"
+bevy_rapier3d = { version = "0.24.0", features = [  ] }
+bevy_editor_pls = "0.7.0"
 scrape-gltf-loader = { path = "../../project-scrape/scrape-gltf-loader/" }

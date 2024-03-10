@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 rapier3d = "0.17.2"
 scrape-gltf-loader = { path = "../scrape-gltf-loader/" }
+tokio = { version = "1.36.0", default-features = false, features = ["sync"] }
 
 # Add this to your Cargo.toml
 [profile.dev.package.rapier3d]
